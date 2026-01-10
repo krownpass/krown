@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+:root {
+    background-color: #000000;
+}
+
+@keyframes scaleFade {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-scaleFade {
+    animation: scaleFade 0.25s ease-out forwards;
+}
+
+
+/* OLD PAGE */
+::view-transition-old(root) {
+    animation: slide-out 700ms cubic-bezier(0.87, 0, 0.13, 1) both;
+}
+
+/* NEW PAGE */
+::view-transition-new(root) {
+    animation: slide-in 700ms cubic-bezier(0.87, 0, 0.13, 1) both;
+}
+
+@keyframes slide-out {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateY(-35%);
+        opacity: 0.2;
+    }
+}
+
+@keyframes slide-in {
+    from {
+        clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
+    }
+
+    to {
+        clip-path: polygon(0 100%, 100% 100%, 100% 0, 0 0);
+    }
+}
+
+
+/* Hide app until intro explicitly reveals it */
+html[data-intro="pending"] body {
+    opacity: 0;
+}
+
+html[data-intro="ready"] body {
+    opacity: 1;
+    transition: opacity 0.6s ease;
+}
