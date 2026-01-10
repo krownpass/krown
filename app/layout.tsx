@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Footer from "./components/Footer";
 import IntroGate from "./client/intro-gate";
+import { MountFlag } from "./components/MountFlag";
 const geistSans = Geist({
     variable: "--font-geist-sans",
     subsets: ["latin"],
@@ -91,7 +92,7 @@ export default function RootLayout({
 }) {
 
     return (
-        <html lang="en" data-intro="pending">
+        <html lang="en" >
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
@@ -118,6 +119,7 @@ export default function RootLayout({
                         }),
                     }}
                 />
+                <MountFlag />
                 <IntroGate>
                     {children}
                     <Footer />

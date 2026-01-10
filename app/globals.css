@@ -54,12 +54,7 @@
 }
 
 
-/* Hide app until intro explicitly reveals it */
-html[data-intro="pending"] body {
-    opacity: 0;
-}
-
-html[data-intro="ready"] body {
-    opacity: 1;
-    transition: opacity 0.6s ease;
+html:not([data-mounted])::view-transition-old(root),
+html:not([data-mounted])::view-transition-new(root) {
+    animation: none !important;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import IntroOverlay from "../components/Intro";
 
 export default function IntroGate({
@@ -10,23 +10,18 @@ export default function IntroGate({
 }) {
     const [done, setDone] = useState(false);
 
-    useEffect(() => {
-        if (done) {
-            document.documentElement.setAttribute(
-                "data-intro",
-                "ready"
-            );
-        }
-    }, [done]);
-
     return (
         <>
             {!done && (
                 <IntroOverlay onComplete={() => setDone(true)} />
             )}
 
-            {/* App always mounted but hidden by CSS */}
-            {children}
+            <div
+                className={`transition-opacity duration-500 ease-out ${done ? "opacity-100" : "opacity-0"
+                    }`}
+            >
+                {children}
+            </div>
         </>
     );
 }
