@@ -56,10 +56,9 @@ export default function HomeClient() {
             />
 
             {/* OVERLAYS */}
-            <JoinOverlay
-                open={joinOpen}
-                onClose={() => setJoinOpen(false)}
-            />
+            {joinOpen && (
+                <JoinOverlay onClose={() => setJoinOpen(false)} />
+            )}
 
             {partnerOpen && (
                 <PartnerOverlay

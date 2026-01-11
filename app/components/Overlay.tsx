@@ -48,10 +48,8 @@ export function Input({
 /* ================= OVERLAY ================= */
 
 export default function JoinOverlay({
-    open,
     onClose,
 }: {
-    open: boolean;
     onClose: () => void;
 }) {
     const overlayRef = useRef<HTMLDivElement>(null);
@@ -76,7 +74,34 @@ export default function JoinOverlay({
     });
 
     /* ================= OPEN / CLOSE PAGE TRANSITION ================= */
+    useEffect(() => {
+        const overlay = overlayRef.current;
+        const card = cardRef.current;
+        if (!overlay || !card) return;
 
+        document.body.style.overflow = "hidden";
+
+        gsap.set(overlay, { opacity: 0 });
+        gsap.set(card, { y: "-120%", scale: 0.96 });
+
+        gsap.timeline()
+            .to(overlay, {
+                opacity: 1,
+                duration: 0.25,
+                ease: "power2.out",
+            })
+            .to(card, {
+                y: "0%",
+                scale: 1,
+                duration: 0.6,
+                ease: "power4.out",
+            }, "-=0.1");
+
+        return () => {
+            document.body.style.overflow = "";
+            gsap.killTweensOf("*");
+        };
+    }, []);
     const handleClose = () => {
         const card = cardRef.current;
         const overlay = overlayRef.current;
@@ -107,7 +132,7 @@ export default function JoinOverlay({
                 gsap.set(overlay, {
                     opacity: 0,
                     duration: 0.35,
-                    easeL: "power2.out",
+                    ease: "power2.out",
                     onComplete: () => {
                         gsap.set(overlay, { pointerEvents: "none" });
 
@@ -118,52 +143,6 @@ export default function JoinOverlay({
             },
         });
     };
-    useEffect(() => {
-        if (!open) return;
-
-        const overlay = overlayRef.current;
-        const card = cardRef.current;
-        if (!overlay || !card) return;
-
-        document.body.style.overflow = "hidden";
-
-        gsap.set(overlay, {
-            opacity: 1,
-            pointerEvents: "auto",
-        });
-
-        gsap.set(card, {
-            y: "-120%",
-            scale: 0.96,
-        });
-
-        gsap.timeline()
-            .to(card, {
-                y: "0%",
-                scale: 1,
-                duration: 0.65,
-                ease: "power4.out",
-            })
-            .fromTo(
-                [glowTL.current, glowBR.current],
-                { opacity: 0 },
-                { opacity: 0.35, duration: 0.4 },
-                "-=0.3"
-            );
-    }, [open]);
-    /* ================= ESC ================= */
-
-    useEffect(() => {
-        const esc = (e: KeyboardEvent) => {
-            if (e.key === "Escape" && open) handleClose();
-        };
-        window.addEventListener("keydown", esc);
-        return () => window.removeEventListener("keydown", esc);
-    }, [open, onClose]);
-
-    /* ================= FORM → SUCCESS ANIMATION ================= */
-
-
     useEffect(() => {
         if (!submitted) return;
         if (!formRef.current || !successRef.current || !cardRef.current) return;
@@ -221,7 +200,7 @@ export default function JoinOverlay({
     return (
         <div
             ref={overlayRef}
-            className="fixed inset-0 z-[9999] bg-black opacity-0 pointer-events-none"
+            className="fixed inset-0 z-[9999] bg-black opacity-0 "
         >
             {/* CLOSE */}
             <button
