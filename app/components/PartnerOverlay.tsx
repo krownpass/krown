@@ -20,7 +20,8 @@ export default function PartnerOverlay({ open, onClose }: Props) {
     const successRef = useRef<HTMLDivElement>(null);
     const submitBtnRef = useRef<HTMLButtonElement>(null);
 
-    const [mounted, setMounted] = useState(false);
+    const playedRef = useRef(false);
+
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -48,103 +49,53 @@ export default function PartnerOverlay({ open, onClose }: Props) {
         };
     }, [open]);
 
-    /* ================= MOUNT ================= */
-    useEffect(() => {
-        if (open) {
-            setMounted(true);
-            setSubmitted(false);
-            setError(null);
-        }
-    }, [open]);
-
-    /* ================= OPEN ANIMATION ================= */
+    /* ================= OPEN ANIMATION (ONCE) ================= */
     useLayoutEffect(() => {
-        if (!mounted) return;
+        if (!open || playedRef.current) return;
+        playedRef.current = true;
 
-        gsap.set(overlayRef.current, { opacity: 0 });
-        gsap.set(cardRef.current, { opacity: 0, y: 20, scale: 0.96 });
+        gsap.set(overlayRef.current, { autoAlpha: 0 });
+        gsap.set(cardRef.current, { autoAlpha: 0, y: 20, scale: 0.96 });
 
-        const tl = gsap.timeline();
-        tl.to(overlayRef.current, {
-            opacity: 1,
-            duration: 0.3,
-            ease: "power1.out",
-        }).to(
-            cardRef.current,
-            {
-                opacity: 1,
-                y: 0,
-                scale: 1,
-                duration: 0.5,
-                ease: "power3.out",
-            },
-            "-=0.1"
-        );
-
-        return () => {
-            tl.kill();
-        };
-    }, [mounted]);
-
-    /* ================= FORM → SUCCESS ================= */
-    useLayoutEffect(() => {
-        if (!submitted) return;
-
-        gsap.set(successRef.current, {
-            opacity: 0,
-            pointerEvents: "none",
-        });
-
-        const tl = gsap.timeline();
-
-        tl.to(submitBtnRef.current, {
-            scale: 0.96,
-            duration: 0.12,
-        })
-            .to(submitBtnRef.current, {
-                scale: 1,
-                duration: 0.18,
+        gsap.timeline()
+            .to(overlayRef.current, {
+                autoAlpha: 1,
+                duration: 0.3,
+                ease: "power1.out",
             })
-            .to(formRef.current, {
-                opacity: 0,
-                scale: 0.98,
-                duration: 0.35,
-            })
-            .to(successRef.current, {
-                opacity: 1,
-                duration: 0.45,
-                onStart: () => {
-                    successRef.current!.style.pointerEvents = "auto";
+            .to(
+                cardRef.current,
+                {
+                    autoAlpha: 1,
+                    y: 0,
+                    scale: 1,
+                    duration: 0.5,
+                    ease: "power3.out",
                 },
-            });
-
-        return () => {
-            tl.kill();
-        };
-    }, [submitted]);
+                "-=0.1"
+            );
+    }, [open]);
 
     /* ================= CLOSE ================= */
     const handleClose = () => {
+        playedRef.current = false;
+
         gsap.timeline({
-            onComplete: () => {
-                setMounted(false);
-                onClose();
-            },
+            onComplete: onClose,
         })
             .to(cardRef.current, {
-                opacity: 0,
+                autoAlpha: 0,
                 y: 10,
                 scale: 0.97,
                 duration: 0.25,
             })
             .to(overlayRef.current, {
-                opacity: 0,
+                autoAlpha: 0,
                 duration: 0.2,
             });
     };
 
-    if (!mounted) return null;
-
+    if (!open) return null;
     return (
         <div
             ref={overlayRef}

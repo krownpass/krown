@@ -158,13 +158,9 @@ export default function PartnerLearnMoreSection({
             {/* ================= BACKGROUND GLOW ================= */}
             <div className="pointer-events-none absolute inset-0">
                 <div
-                    className="
-                        absolute inset-0
-                        bg-[radial-gradient(90%_45%_at_50%_0%,rgba(120,0,0,0.14),transparent_65%)]
+                    className="absolute inset-0 bg-[radial-gradient(90%_45%_at_50%_0%,rgba(120,0,0,0.14),transparent_65%)]
                         md:bg-[radial-gradient(70%_40%_at_50%_10%,rgba(120,0,0,0.20),transparent_55%)]
-                        lg:bg-[radial-gradient(55%_35%_at_50%_15%,rgba(120,0,0,0.25),transparent_45%)]
-                    "
-                />
+                        lg:bg-[radial-gradient(55%_35%_at_50%_15%,rgba(120,0,0,0.25),transparent_45%)] "/>
             </div>
 
             {/* ================= MAIN ================= */}

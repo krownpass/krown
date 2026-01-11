@@ -38,7 +38,7 @@ export default function Footer() {
 
                             <SocialIcon
                                 icon={<LinkedinIcon className="h-6 w-6" />}
-                                href="https://www.linkedin.com/company/krown"
+                                href="https://www.linkedin.com/company/krown-private-limited/about"
                                 label="Krown on LinkedIn"
                             />
                         </div>
