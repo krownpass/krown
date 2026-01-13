@@ -56,6 +56,7 @@ export default function PartnerLearnMoreSection({
     const isNavigatingRef = useRef(false);
     const router = useRouter();
 
+    const cardsRef = useRef<HTMLDivElement>(null);
     /* ================= RESET PANEL + SCROLL ON MOUNT ================= */
     useLayoutEffect(() => {
         // Always reset wipe panel (critical for App Router)
@@ -135,8 +136,10 @@ export default function PartnerLearnMoreSection({
                 stagger: 0.1,
                 ease: "power3.out",
                 scrollTrigger: {
-                    trigger: sectionRef.current,
-                    start: "top 70%",
+                    trigger: cardsRef.current,
+                    start: "top 80%",
+
+                    toggleActions: "play none none reverse",
                 },
             });
         }, sectionRef);
@@ -157,10 +160,7 @@ export default function PartnerLearnMoreSection({
 
             {/* ================= BACKGROUND GLOW ================= */}
             <div className="pointer-events-none absolute inset-0">
-                <div
-                    className="absolute inset-0 bg-[radial-gradient(90%_45%_at_50%_0%,rgba(120,0,0,0.14),transparent_65%)]
-                        md:bg-[radial-gradient(70%_40%_at_50%_10%,rgba(120,0,0,0.20),transparent_55%)]
-                        lg:bg-[radial-gradient(55%_35%_at_50%_15%,rgba(120,0,0,0.25),transparent_45%)] "/>
+                <div className="absolute inset-0 bg-[radial-gradient(90%_45%_at_50%_0%,rgba(120,0,0,0.14),transparent_65%)] md:bg-[radial-gradient(70%_40%_at_50%_10%,rgba(120,0,0,0.20),transparent_55%)] lg:bg-[radial-gradient(55%_35%_at_50%_15%,rgba(120,0,0,0.25),transparent_45%)] " />
             </div>
 
             {/* ================= MAIN ================= */}
@@ -193,25 +193,23 @@ export default function PartnerLearnMoreSection({
                 </div>
 
                 {/* CARDS */}
+
+                {/* SECTION HEADING ABOVE CARDS */}
+                <div
+
+                    ref={cardsRef}
+                    className="mt-20 mb-10 flex flex-col items-center text-center">
+                    <h2 className="reveal opacity-0 translate-y-10 text-[26px] sm:text-[30px] md:text-[32px] lg:text-[40px] font-semibold">
+                        What It Means to Be a Krown Partner
+                    </h2>
+
+                </div>
                 <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 justify-items-center sm:justify-items-stretch">
+
                     {FEATURES.map((f, i) => (
                         <div
                             key={i}
-                            className="card opacity-0 translate-y-12
-                                flex
-                                h-[320px]
-                                w-full
-                                max-w-[300px]
-                                flex-col
-                                items-center
-                                justify-center
-                                rounded-2xl
-                                border
-                                border-white/10
-                                bg-white/[0.03]
-                                p-6
-                                backdrop-blur
-                                text-center ">
+                            className="card opacity-0 translate-y-12 flex h-[320px] w-full max-w-[300px] flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur text-center ">
                             <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-red-600/10 text-red-600">
                                 <f.icon className="h-6 w-6" />
                             </div>

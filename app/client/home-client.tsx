@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import CircularRevealStrips from "../components/CircularRevealStrips";
 import GlassNavbar from "../components/NavBar";
 import JoinOverlay from "../components/Overlay";

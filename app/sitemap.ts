@@ -2,9 +2,14 @@
 export default function sitemap() {
     return [
         {
-            url: "krownpass.com",
+            url: "https://krownpass.com",
             lastModified: new Date(),
-            changeFrequency: "monthly"
+            changeFrequency: "monthly",
+            priority: 1,
         },
+        {
+            url: "https://krownpass.com/partner",
+            priority: 0.9
+        }
     ];
 }

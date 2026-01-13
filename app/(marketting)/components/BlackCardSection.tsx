@@ -5,13 +5,7 @@ export default function HowPartnershipWorks() {
             {/* Subtle background glow */}
             <div className="pointer-events-none absolute inset-0">
                 <div
-                    className="
-            absolute inset-0
-            bg-[radial-gradient(90%_45%_at_50%_0%,rgba(120,0,0,0.18),transparent_60%)]
-            md:bg-[radial-gradient(70%_40%_at_50%_0%,rgba(120,0,0,0.22),transparent_50%)]
-            lg:bg-[radial-gradient(60%_40%_at_50%_0%,rgba(120,0,0,0.25),transparent_45%)]
-        "
-                />
+                    className="absolute inset-0 bg-[radial-gradient(90%_45%_at_50%_0%,rgba(120,0,0,0.18),transparent_60%)] md:bg-[radial-gradient(70%_40%_at_50%_0%,rgba(120,0,0,0.22),transparent_50%)] lg:bg-[radial-gradient(60%_40%_at_50%_0%,rgba(120,0,0,0.25),transparent_45%)]" />
             </div>
 
             <div className="relative z-10 mx-auto max-w-6xl px-6">

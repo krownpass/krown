@@ -1,6 +1,6 @@
 "use client";
 
-import { InstagramIcon, XIcon, LinkedinIcon } from "lucide-react";
+import { InstagramIcon, XIcon, LinkedinIcon, Facebook, Youtube } from "lucide-react";
 
 export default function Footer() {
     return (
@@ -31,13 +31,19 @@ export default function Footer() {
                             />
 
                             <SocialIcon
-                                icon={<XIcon className="h-6 w-6" />}
+                                icon={<Facebook className="h-6 w-6" />}
                                 href="https://x.com/thekrownguy"
                                 label="Krown on X"
                             />
 
                             <SocialIcon
                                 icon={<LinkedinIcon className="h-6 w-6" />}
+                                href="https://www.linkedin.com/company/krown-private-limited/about"
+                                label="Krown on LinkedIn"
+                            />
+
+                            <SocialIcon
+                                icon={<Youtube className="h-6 w-6" />}
                                 href="https://www.linkedin.com/company/krown-private-limited/about"
                                 label="Krown on LinkedIn"
                             />

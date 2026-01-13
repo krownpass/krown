@@ -43,13 +43,7 @@ export default function PartnerValuesSection() {
             {/* Subtle background glow */}
             <div className="pointer-events-none absolute inset-0">
                 <div
-                    className="
-            absolute inset-0
-            bg-[radial-gradient(80%_50%_at_50%_30%,rgba(120,0,0,0.14),transparent_65%)]
-            md:bg-[radial-gradient(60%_45%_at_30%_40%,rgba(120,0,0,0.18),transparent_60%)]
-            lg:bg-[radial-gradient(50%_40%_at_20%_40%,rgba(120,0,0,0.22),transparent_55%)]
-        "
-                />
+                    className="absolute inset-0 bg-[radial-gradient(80%_50%_at_50%_30%,rgba(120,0,0,0.14),transparent_65%)] md:bg-[radial-gradient(60%_45%_at_30%_40%,rgba(120,0,0,0.18),transparent_60%)] lg:bg-[radial-gradient(50%_40%_at_20%_40%,rgba(120,0,0,0.22),transparent_55%)]" />
             </div>
 
             <div className="relative z-10 mx-auto max-w-7xl px-6 grid grid-cols-1 md:grid-cols-2 gap-24 items-center">

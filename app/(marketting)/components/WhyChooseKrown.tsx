@@ -83,14 +83,7 @@ export default function WhyCafesChooseKrown() {
         >
 
             <div className="pointer-events-none absolute inset-0">
-                <div
-                    className="
-            absolute inset-0
-            bg-[radial-gradient(70%_40%_at_50%_0%,rgba(128,0,32,0.18),transparent_65%)]
-            md:bg-[radial-gradient(50%_35%_at_50%_10%,rgba(128,0,32,0.22),transparent_60%)]
-            lg:bg-[radial-gradient(40%_30%_at_50%_10%,rgba(128,0,32,0.25),transparent_55%)]
-        "
-                />
+                <div className="absolute inset-0 bg-[radial-gradient(90%_45%_at_50%_0%,rgba(120,0,0,0.14),transparent_65%)] md:bg-[radial-gradient(70%_40%_at_50%_10%,rgba(120,0,0,0.20),transparent_55%)] lg:bg-[radial-gradient(55%_35%_at_50%_15%,rgba(120,0,0,0.25),transparent_45%)] " />
             </div>
             <div className="relative z-10 mx-auto max-w-7xl px-6">
                 {/* Heading */}
@@ -103,8 +96,7 @@ export default function WhyCafesChooseKrown() {
                     {STATS.map((stat, i) => (
                         <div
                             key={i}
-                            className="stat-card opacity-0 translate-y-8 relative rounded-2xl border border-white/10 bg-black/70 p-10 text-center backdrop-blur-xl
-shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),0_20px_40px_rgba(0,0,0,0.6)] transition hover:-translate-y-1 hover:border-white/20">
+                            className="stat-card opacity-0 translate-y-8 relative rounded-2xl border border-white/10 bg-black/70 p-10 text-center backdrop-blur-xl shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),0_20px_40px_rgba(0,0,0,0.6)] transition hover:-translate-y-1 hover:border-white/20">
                             {/* Soft inner glow */}
                             <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/[0.05] to-transparent pointer-events-none" />
 

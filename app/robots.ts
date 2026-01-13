@@ -5,8 +5,12 @@ export default function robots(): MetadataRoute.Robots {
         rules: [
             {
                 userAgent: "*",
-                allow: "/",
+                allow: ["/", "/partner"]
             },
+            {
+                userAgent: "Googlebot",
+                allow: ["/", "/partner"]
+            }
         ],
         sitemap: "https://krownpass.com/sitemap.xml",
     };

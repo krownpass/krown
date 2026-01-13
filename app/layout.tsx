@@ -25,14 +25,6 @@ export const metadata: Metadata = {
     description:
         "Krown is Chennai’s premium café membership. Work from cafés, attend exclusive events, and unlock curated experiences.",
 
-    keywords: [
-        "Chennai cafes",
-        "cafe membership Chennai",
-        "work from cafe Chennai",
-        "premium cafes Chennai",
-        "Krown cafe pass",
-        "cafe pass"
-    ],
 
     robots: {
         index: true,
@@ -76,7 +68,8 @@ export const metadata: Metadata = {
     },
 
     icons: {
-        icon: "/krown.png",
+        icon: "/browser-desktop.png",
+        shortcut: "/krown.png",
         apple: "/apple-touch-icon.png",
     },
 
