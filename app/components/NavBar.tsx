@@ -21,7 +21,7 @@ export default function GlassNavbar({
                             <div className="flex items-center justify-center">
 
                                 <Image
-                                    src="/krown.png"
+                                    src="/Logo-48.png"
                                     alt="logo"
                                     width={40}
                                     height={40}
