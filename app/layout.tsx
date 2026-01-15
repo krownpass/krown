@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Footer from "./components/Footer";
 import IntroGate from "./client/intro-gate";
-import { MountFlag } from "./components/MountFlag";
 const geistSans = Geist({
     variable: "--font-geist-sans",
     subsets: ["latin"],
@@ -50,7 +49,7 @@ export const metadata: Metadata = {
             "Your city pass to Chennai’s best cafés. Work, meet, and attend exclusive events with one membership.",
         images: [
             {
-                url: "/og/krown-og.jpg",
+                url: "/og/opengraph.svg",
                 width: 1200,
                 height: 630,
                 alt: "Krown – Chennai Café Membership Pass",
@@ -63,16 +62,17 @@ export const metadata: Metadata = {
         title: "Krown – Chennai Café Membership Pass",
         description:
             "One membership. Chennai’s best cafés. Work, meet & discover.",
-        images: ["/og/krown-og.jpg"],
+        images: ["/og/opengraph.svg"],
         creator: "@krownpass",
     },
 
     icons: {
-        icon: "/browser-desktop.png",
-        shortcut: "/krown.png",
+        icon: [
+            { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+            { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+        ],
         apple: "/apple-touch-icon.png",
     },
-
     alternates: {
         canonical: "https://krownpass.com",
     },
@@ -112,7 +112,6 @@ export default function RootLayout({
                         }),
                     }}
                 />
-                <MountFlag />
                 <IntroGate>
                     {children}
                     <Footer />
