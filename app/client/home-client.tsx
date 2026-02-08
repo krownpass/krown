@@ -45,8 +45,7 @@ export default function HomeClient() {
                     </h1>
 
                     <p className="mt-6 text-white/70">
-                        From where you work to where you unwind,
-                        Krown gives you access to what matters.
+                        One pass for every part of your day
                     </p>
 
                     <button
