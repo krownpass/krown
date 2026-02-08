@@ -116,7 +116,7 @@ export default function PartnerClient() {
             </section>
 
             {/* STATS */}
-            <section className="section">
+            {/* <section className="section">
                 <h2 className="section-title reveal">Why Cafés Choose Krown</h2>
 
                 <div className="grid-3">
@@ -131,7 +131,7 @@ export default function PartnerClient() {
                         </div>
                     ))}
                 </div>
-            </section>
+            </section> */}
 
             {/* CTA */}
             <section className="cta reveal">

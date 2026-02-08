@@ -1,14 +1,21 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function GlassNavbar({
     onJoin,
     onBecomePartner,
 }: {
     onJoin: () => void;
-    onBecomePartner: () => void;
+    onBecomePartner?: () => void;
 }) {
+    const router = useRouter();
+
+    const handleBecomePartner = () => {
+        if (onBecomePartner) return onBecomePartner();
+        router.push("/partner#partner-learn-more");
+    };
     return (
         <div className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
             <nav
@@ -36,7 +43,7 @@ export default function GlassNavbar({
                         {/* Actions */}
                         <div className="flex items-center gap-14">
                             <button
-                                onClick={onBecomePartner}
+                                onClick={handleBecomePartner}
                                 className="hidden sm:inline-flex text-sm text-white/60 hover:text-white transition"
                             >
                                 Partner with Us

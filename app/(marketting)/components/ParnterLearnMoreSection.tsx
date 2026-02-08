@@ -149,6 +149,7 @@ export default function PartnerLearnMoreSection({
 
     return (
         <section
+            id="partner-learn-more"
             ref={sectionRef}
             className="relative w-full bg-[#0A0A0A] overflow-hidden"
         >

@@ -1,16 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import CircularRevealStrips from "../components/CircularRevealStrips";
 import GlassNavbar from "../components/NavBar";
 import JoinOverlay from "../components/Overlay";
 import PartnerOverlay from "../components/PartnerOverlay";
 import PartnerWithKrown from "../components/PartnerWithKrown";
-
+import KrownAccess from "../components/KrownAccess";
+import KrownAdvantage from "../components/KrownAdvantages";
 export default function HomeClient() {
     const [joinOpen, setJoinOpen] = useState(false);
     const [partnerOpen, setPartnerOpen] = useState(false);
+    const partnerSectionRef = useRef<HTMLDivElement>(null);
 
+    const scrollToPartner = () => {
+        partnerSectionRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+        });
+    };
     return (
         <>
             {/* BACKGROUND (NON CLICKABLE) */}
@@ -22,7 +30,7 @@ export default function HomeClient() {
             <div className="relative z-30">
                 <GlassNavbar
                     onJoin={() => setJoinOpen(true)}
-                    onBecomePartner={() => setPartnerOpen(true)}
+                    onBecomePartner={scrollToPartner}
                 />
             </div>
 
@@ -32,13 +40,13 @@ export default function HomeClient() {
                     <h1 className="text-white text-[2.4rem] sm:text-[3rem] md:text-[4.2rem] font-serif italic leading-tight">
                         <span className="block">Your city pass to</span>
                         <span className="block mt-2">
-                            Chennai’s best cafés.
+                            better experiences.
                         </span>
                     </h1>
 
                     <p className="mt-6 text-white/70">
-                        Work from cafés daily. Attend exclusive events.
-                        Discover new spots. One membership unlocks it all.
+                        From where you work to where you unwind,
+                        Krown gives you access to what matters.
                     </p>
 
                     <button
@@ -49,12 +57,16 @@ export default function HomeClient() {
                     </button>
                 </div>
             </section>
+            {/* KROWN ACCESS */}
+            <KrownAccess />
+            {/* KROWN ADVANTAGES */}
+            <KrownAdvantage />
 
             {/* PARTNER */}
             <PartnerWithKrown
+                ref={partnerSectionRef}
                 onBecomePartner={() => setPartnerOpen(true)}
             />
-
             {/* OVERLAYS */}
             {joinOpen && (
                 <JoinOverlay onClose={() => setJoinOpen(false)} />

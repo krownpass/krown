@@ -83,10 +83,10 @@ export default function RootLayout({
 }: {
     children: React.ReactNode;
 }) {
-
     return (
-        <html lang="en" >
+        <html lang="en">
             <body
+                suppressHydrationWarning
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
                 {/* Structured Data */}
@@ -120,3 +120,4 @@ export default function RootLayout({
         </html>
     );
 }
+
