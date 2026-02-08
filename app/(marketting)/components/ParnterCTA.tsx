@@ -37,7 +37,7 @@ export default function PartnerCTASection({
     return (
         <section
             ref={sectionRef}
-            className="bg-[#0A0A0A] relative flex min-h-[80vh] w-full items-center justify-center overflow-hidden ">
+            className="bg-[#000000] relative flex min-h-[80vh] w-full items-center justify-center overflow-hidden ">
             {/* ===== DARK VIGNETTE BACKGROUND ===== */}
             <div className="pointer-events-none absolute inset-0">
                 <div className="absolute inset-0 bg-[radial-gradient(70%_45%_at_50%_40%,rgba(140,0,26,0.25),transparent_60%)]" />

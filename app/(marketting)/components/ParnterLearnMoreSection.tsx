@@ -231,7 +231,6 @@ export default function PartnerLearnMoreSection({
 
             <HowPartnershipWorks />
             <PartnerValuesSection />
-            <WhyCafesChooseKrown />
             <PartnerCTASection onBecomePartner={onBecomePartner} />
         </section>
     );
