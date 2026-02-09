@@ -1,5 +1,4 @@
 "use client";
-
 import { useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
@@ -11,7 +10,6 @@ export default function IntroOverlay({
     const root = useRef<HTMLDivElement>(null);
     const [isMobile, setIsMobile] = useState(false);
 
-    /* Detect screen size AFTER mount (hydration-safe) */
     useLayoutEffect(() => {
         if (typeof window === "undefined") return;
         setIsMobile(window.innerWidth < 768);
@@ -29,7 +27,10 @@ export default function IntroOverlay({
             const LOGO_BURST = isMobile ? 4 : 10;
 
             gsap.set(root.current, { autoAlpha: 1 });
+
+            // Set initial state for words
             gsap.set(q(".word"), { autoAlpha: 0, y: WORD_Y_IN });
+
             gsap.set(q(".logo"), {
                 autoAlpha: 0,
                 scale: LOGO_SCALE_IN,
@@ -45,7 +46,7 @@ export default function IntroOverlay({
                 .to(q(".word"), {
                     autoAlpha: 1,
                     y: 0,
-                    stagger: isMobile ? 0.1 : 0.12,
+                    stagger: isMobile ? 0.08 : 0.12,
                     duration: isMobile ? 0.6 : 0.8,
                 })
                 .to(q(".word"), {
@@ -79,17 +80,18 @@ export default function IntroOverlay({
     return (
         <div
             ref={root}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black opacity-0 invisible"
-        >
-            {/* Words */}
-            <div className="absolute z-20 flex flex-wrap justify-center gap-x-3 gap-y-2 px-6 text-center font-bold text-white text-[clamp(1.4rem,6vw,3.4rem)]">
-                <span className="word">Average is</span>
-                <span className="word">everywhere,</span>
-                <span className="word">This isn&apos;t.</span>
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black opacity-0 invisible">
+            {/* Words – force single line on mobile */}
+            <div
+                className="absolute z-20 whitespace-nowrap font-bold text-white text-center px-4 sm:px-6 text-[clamp(1.1rem,5.2vw,3.4rem)] leading-tight">
+                <span className="word">Average is </span>
+                <span className="word">everywhere, </span>
+                <span className="word">This isn't.</span>
             </div>
 
             {/* Logo */}
-            <div className="logo absolute z-10 text-[#A00028] font-extrabold tracking-[0.18em] md:tracking-[0.25em] text-[clamp(2.2rem,10vw,6.5rem)]">
+            <div
+                className="logo absolute z-10 text-[#A00028] font-extrabold tracking-[0.14em] sm:tracking-[0.25em] text-[clamp(2rem,9vw,6.5rem)]">
                 KROWN
             </div>
         </div>
