@@ -246,7 +246,7 @@ export default function JoinOverlay({
                                 <h2 className="text-[2rem] font-serif italic text-white">
                                     Be the first to experience
                                     <br />
-                                    Chennai’s café elite.
+                                    Chennai’s curated lifestyle.
                                 </h2>
                                 <p className="mt-4 text-sm text-white/60">
                                     Limited memberships. Early access to curated cafés,
