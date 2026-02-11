@@ -52,6 +52,26 @@ export default function Footer() {
                                 href="https://youtube.com"
                                 label="YouTube"
                             />
+
+                        </div>
+                        <div className="mt-8 flex flex-col gap-2 text-sm text-white/50">
+                            <a
+                                href="https://www.termsfeed.com/live/dc53b9dd-8387-407b-be28-e8c53292a7c4"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-white transition"
+                            >
+                                Terms & Conditions
+                            </a>
+
+                            <a
+                                href="https://www.termsfeed.com/live/069258b4-4adc-4b41-95f2-cf9d8095cb27"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-white transition"
+                            >
+                                Privacy Policy
+                            </a>
                         </div>
                     </div>
 
