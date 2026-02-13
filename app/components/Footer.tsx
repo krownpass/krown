@@ -22,7 +22,7 @@ export default function Footer() {
                 <div className="grid grid-cols-1 gap-16 md:grid-cols-2 items-start">
                     {/* Brand */}
                     <div>
-                        <h2 className="text-3xl font-semibold tracking-wide">KROWN</h2>
+                        <h2 className="text-3xl font-semibold tracking-wide">KROWN PRIVATE LIMITED</h2>
 
                         <p className="mt-4 max-w-sm text-white/65 leading-relaxed">
                             Chennai’s exclusive café membership.
@@ -72,6 +72,7 @@ export default function Footer() {
                             >
                                 Privacy Policy
                             </a>
+                            <a className="hover:text-white transition">KROWN</a>
                         </div>
                     </div>
 
