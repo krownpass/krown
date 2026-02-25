@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-// Adjust import paths based on your project structure
-import { fetchAllPlans } from "../../services/plans";
+import { useEffect, useRef, useState } from "react";
 import GlassNavbar from "../../components/NavBar";
 import { CheckCircle2, Sparkles } from "lucide-react";
+
+// ---------------------------------------------------------------------------
+//  Types
+// ---------------------------------------------------------------------------
 
 interface Plan {
     subscription_id: number;
@@ -15,28 +17,270 @@ interface Plan {
     free_drinks: number;
     redemption_limit_per_cafe: number;
     features: { title: string; icon_url: string }[];
+    id: number;
     is_active: boolean;
 }
+
+interface RazorpaySuccessResponse {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+}
+
+interface RazorpayFailedResponse {
+    error: {
+        code: string;
+        description: string;
+        source: string;
+        step: string;
+        reason: string;
+        metadata?: { order_id?: string; payment_id?: string };
+    };
+}
+
+declare global {
+    interface Window {
+        Razorpay: new (options: Record<string, unknown>) => {
+            open: () => void;
+            on: (event: string, handler: (response: RazorpayFailedResponse) => void) => void;
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+//  Helpers
+// ---------------------------------------------------------------------------
+
+/** Sanitize a value before putting it into a deep-link query param */
+const sanitizeParam = (value: string, maxLen = 200): string => {
+    const cleaned = value.replace(/[^a-zA-Z0-9 _.\-]/g, "").slice(0, maxLen);
+    return encodeURIComponent(cleaned);
+};
+
+/** Build a deep link and redirect back to the Krown app */
+const forceRedirectToApp = (deepLink: string) => {
+    const userAgent = navigator.userAgent || "";
+    const isAndroid = /android/i.test(userAgent);
+
+    if (isAndroid) {
+        const intentUrl = `intent://${deepLink.replace("krown://", "")}#Intent;scheme=krown;package=com.krown.app;end;`;
+        window.location.replace(intentUrl);
+    } else {
+        window.location.replace(deepLink);
+    }
+
+    setTimeout(() => {
+        window.close();
+    }, 1500);
+};
+
+// ---------------------------------------------------------------------------
+//  Component
+// ---------------------------------------------------------------------------
 
 export default function PlansPage() {
     const [plans, setPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [isPaymentLoading, setIsPaymentLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isAuthorized, setIsAuthorized] = useState(false);
+    const paymentHandledRef = useRef(false);
+    const razorpayReady = useRef(false);
 
+    // ------------------------------------------------------------------
+    //  On mount: check session via httpOnly cookie (set by proxy)
+    // ------------------------------------------------------------------
     useEffect(() => {
         const loadPlans = async () => {
             try {
-                const data = await fetchAllPlans();
-                setPlans(data.data || []);
-            } catch (err) {
+                // Token is in httpOnly cookie — no token in URL or JS memory
+                const res = await fetch("/api/plans", { credentials: "include" });
+
+                if (res.status === 401) {
+                    setLoading(false);
+                    return;
+                }
+                if (!res.ok) throw new Error("Failed to load plans");
+
+                setIsAuthorized(true);
+                const json = await res.json();
+                setPlans(json.data || []);
+            } catch {
                 setError("Failed to load plans. Please try again later.");
             } finally {
                 setLoading(false);
             }
         };
 
+        // Load Razorpay SDK
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+        script.onload = () => { razorpayReady.current = true; };
+        document.body.appendChild(script);
+
         loadPlans();
     }, []);
+
+    if (!isAuthorized && !loading) {
+        return (
+            <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-6 text-center">
+                 <h1 className="text-3xl font-bold mb-4 text-red-500">Access Denied</h1>
+                 <p className="text-zinc-400 max-w-md">
+                    This page is only accessible via the Krown Mobile App. 
+                    Please open the app and click "Manage Subscription" to view plans.
+                 </p>
+            </div>
+        );
+    }
+
+    const handlePayment = async (plan: Plan) => {
+        // Double-click guard
+        if (isPaymentLoading) return;
+        setIsPaymentLoading(true);
+
+        try {
+            // 1. Initiate payment via proxy (token is in httpOnly cookie)
+            const res = await fetch(`/api/plans/${plan.subscription_id}/pay`, {
+                method: "POST",
+                credentials: "include",
+            });
+
+            if (res.status === 401) {
+                forceRedirectToApp("krown://payment/failure?status=expired&reason=session_expired");
+                return;
+            }
+
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(errText || "Failed to start payment");
+            }
+
+            const data = await res.json();
+            const { sdkPayload, transaction_id } = data;
+
+            // Reset payment state for this attempt
+            paymentHandledRef.current = false;
+
+            // Wait for Razorpay SDK if not loaded yet
+            if (!razorpayReady.current || !window.Razorpay) {
+                await new Promise<void>((resolve, reject) => {
+                    const timeout = setTimeout(() => reject(new Error('Razorpay SDK failed to load')), 10000);
+                    const check = setInterval(() => {
+                        if (window.Razorpay) {
+                            clearInterval(check);
+                            clearTimeout(timeout);
+                            resolve();
+                        }
+                    }, 200);
+                });
+            }
+
+            // 2. Open Razorpay Checkout
+            const options: Record<string, unknown> = {
+                key: sdkPayload.keyId,
+                amount: sdkPayload.amount, // in paise
+                currency: sdkPayload.currency,
+                name: "Krown Subscription",
+                description: `Subscribe to ${plan.subscription_name}`,
+                order_id: sdkPayload.orderId,
+                prefill: {
+                     contact: sdkPayload.prefill.contact
+                },
+                theme: { color: "#C11E38" },
+                handler: async function (_response: RazorpaySuccessResponse) {
+                    paymentHandledRef.current = true;
+                    setIsProcessing(true);
+                    // Poll payment-status via proxy until webhook confirms
+                    const maxAttempts = 10;
+                    let attempt = 0;
+                    let paymentConfirmed = false;
+
+                    while (attempt < maxAttempts) {
+                        attempt++;
+                        try {
+                            const pollRes = await fetch(
+                                `/api/plans/payment-status/${transaction_id}`,
+                                { credentials: "include" }
+                            );
+
+                            if (pollRes.ok) {
+                                const pollData = await pollRes.json();
+
+                                if (pollData.status === 'success' || pollData.success === true) {
+                                    paymentConfirmed = true;
+                                    break;
+                                } else if (pollData.status === 'failed') {
+                                    forceRedirectToApp(`krown://payment/failure?status=failed&reason=payment_failed`);
+                                    return;
+                                }
+                            }
+                        } catch {
+                            // network error — retry on next iteration
+                        }
+
+                        await new Promise(r => setTimeout(r, 2000));
+                    }
+
+                    if (paymentConfirmed) {
+                        forceRedirectToApp(`krown://payment/success?status=success&transaction_id=${sanitizeParam(transaction_id)}`);
+                    } else {
+                        forceRedirectToApp(`krown://payment/success?status=pending&transaction_id=${sanitizeParam(transaction_id)}`);
+                    }
+                },
+                modal: {
+                    ondismiss: function() {
+                         // This fires when user closes the Razorpay modal (cancel)
+                         // BUT it also fires when Razorpay redirects to a UPI/payment app
+                         // So we need to wait and check if the user actually cancelled
+                         if (!paymentHandledRef.current) {
+                             if (document.hidden) {
+                                 // User switched to a UPI/payment app — wait for return
+                                 const handleVisibility = () => {
+                                     if (!document.hidden && !paymentHandledRef.current) {
+                                         document.removeEventListener('visibilitychange', handleVisibility);
+                                         setTimeout(() => {
+                                             if (!paymentHandledRef.current) {
+                                                 forceRedirectToApp(`krown://payment/failure?status=cancelled`);
+                                             }
+                                         }, 3000);
+                                     }
+                                 };
+                                 document.addEventListener('visibilitychange', handleVisibility);
+                                 return;
+                             }
+
+                             // User manually closed the modal
+                             setTimeout(() => {
+                                 if (!paymentHandledRef.current && !document.hidden) {
+                                     forceRedirectToApp(`krown://payment/failure?status=cancelled`);
+                                 }
+                             }, 2000);
+                         }
+                    }
+                }
+            };
+
+            const rzp = new window.Razorpay(options);
+            
+            rzp.on("payment.failed", function (response: RazorpayFailedResponse) {
+                    paymentHandledRef.current = true;
+                    const reason = sanitizeParam(response.error?.description || "Payment failed");
+                    forceRedirectToApp(`krown://payment/failure?status=failed&reason=${reason}`);
+            });
+            
+            rzp.open();
+
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Something went wrong";
+            const reason = sanitizeParam(message);
+            forceRedirectToApp(`krown://payment/failure?status=error&reason=${reason}`);
+        } finally {
+            setIsPaymentLoading(false);
+        }
+    };
+
 
     return (
         <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-red-500/30 overflow-x-hidden">
@@ -59,6 +303,15 @@ export default function PlansPage() {
                     onBecomePartner={() => { }}
                 />
             </div>
+
+            {/* NEW: Full-screen loading overlay while polling for webhook */}
+            {isProcessing && (
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm">
+                    <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Verifying Payment...</h2>
+                    <p className="text-zinc-400">Please do not close this page.</p>
+                </div>
+            )}
 
             {/* Background Ambient Glow */}
             <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-900/20 rounded-full blur-[120px] pointer-events-none z-0"></div>
@@ -146,12 +399,14 @@ export default function PlansPage() {
 
                                     {/* --- BRIGHT HIGH-CONTRAST BUTTON --- */}
                                     <button
-                                        className={`relative z-10 w-full py-4 rounded-xl font-bold transition-all duration-300 mt-auto ${isPopular
+                                        onClick={() => handlePayment(plan)}
+                                        disabled={isPaymentLoading}
+                                        className={`relative z-10 w-full py-4 rounded-xl font-bold transition-all duration-300 mt-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${isPopular
                                                 ? 'bg-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:bg-red-500 hover:shadow-[0_0_25px_rgba(220,38,38,0.5)]'
                                                 : 'bg-zinc-100 text-black shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:bg-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]'
                                             }`}
                                     >
-                                        Select {plan.subscription_name}
+                                        {isPaymentLoading ? "Processing..." : `Subscribe to ${plan.subscription_name}`}
                                     </button>
                                 </div>
                             );
