@@ -1,9 +1,13 @@
 import api from "../lib/api";
 
-export const fetchAllPlans = async () => {
+export const fetchAllPlans = async (token?: string) => {
     try {
-        // Using full URL temporarily to ensure it hits the right endpoint
-        const response = await api.get("http://localhost:4000/api/subscriptions/plans");
+        const headers: Record<string, string> = {};
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const response = await api.get("/api/subscriptions/plans", { headers });
         return response.data;
     } catch (error) {
         console.error("Error fetching plans:", error);
