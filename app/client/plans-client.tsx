@@ -319,8 +319,13 @@ export default function PlansClient() {
                                     return;
                                 }
                             }
-                        } catch {
+                        } catch (error) {
                             // network error — retry on next iteration
+                            if (attempt === maxAttempts) {
+                                setIsProcessing(false);
+                                forceRedirectToApp(`krown://payment/failure?status=error&reason=verification_timeout`);
+                                return;
+                            }
                         }
 
                         await new Promise(r => setTimeout(r, 2000));
