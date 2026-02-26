@@ -16,10 +16,6 @@ export default function GlassNavbar({
         if (onBecomePartner) return onBecomePartner();
         router.push("/partner#partner-learn-more");
     };
-
-    const handleShowPlans = () => {
-        router.push("/plans");
-    };
     
     return (
         <div className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
@@ -52,13 +48,6 @@ export default function GlassNavbar({
                                 className="hidden sm:inline-flex text-sm text-white/60 hover:text-white transition"
                             >
                                 Partner with Us
-                            </button>
-
-                            <button
-                                onClick={handleShowPlans}
-                                className="hidden sm:inline-flex text-sm text-white/60 hover:text-white transition"
-                            >
-                                Show Plans
                             </button>
 
                             <button
