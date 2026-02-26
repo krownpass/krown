@@ -212,6 +212,7 @@ export default function PlansPage() {
                                     paymentConfirmed = true;
                                     break;
                                 } else if (pollData.status === 'failed') {
+                                    setIsProcessing(false);
                                     forceRedirectToApp(`krown://payment/failure?status=failed&reason=payment_failed`);
                                     return;
                                 }
@@ -223,6 +224,8 @@ export default function PlansPage() {
                         await new Promise(r => setTimeout(r, 2000));
                     }
 
+                    setIsProcessing(false);
+
                     if (paymentConfirmed) {
                         forceRedirectToApp(`krown://payment/success?status=success&transaction_id=${sanitizeParam(transaction_id)}`);
                     } else {
@@ -231,12 +234,8 @@ export default function PlansPage() {
                 },
                 modal: {
                     ondismiss: function() {
-                         // This fires when user closes the Razorpay modal (cancel)
-                         // BUT it also fires when Razorpay redirects to a UPI/payment app
-                         // So we need to wait and check if the user actually cancelled
                          if (!paymentHandledRef.current) {
                              if (document.hidden) {
-                                 // User switched to a UPI/payment app — wait for return
                                  const handleVisibility = () => {
                                      if (!document.hidden && !paymentHandledRef.current) {
                                          document.removeEventListener('visibilitychange', handleVisibility);
@@ -251,7 +250,6 @@ export default function PlansPage() {
                                  return;
                              }
 
-                             // User manually closed the modal
                              setTimeout(() => {
                                  if (!paymentHandledRef.current && !document.hidden) {
                                      forceRedirectToApp(`krown://payment/failure?status=cancelled`);
@@ -304,7 +302,7 @@ export default function PlansPage() {
                 />
             </div>
 
-            {/* NEW: Full-screen loading overlay while polling for webhook */}
+            {/* Full-screen loading overlay while polling for webhook */}
             {isProcessing && (
                 <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm">
                     <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mb-6"></div>
