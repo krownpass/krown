@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Footer from "./components/Footer";
 import IntroGate from "./client/intro-gate";
+import QueryProvider from "./providers/QueryProvider";
+import { Toaster } from "react-hot-toast";
+
 const geistSans = Geist({
     variable: "--font-geist-sans",
     subsets: ["latin"],
@@ -112,10 +115,13 @@ export default function RootLayout({
                         }),
                     }}
                 />
-                <IntroGate>
-                    {children}
-                    <Footer />
-                </IntroGate>
+                <QueryProvider>
+                    <IntroGate>
+                        {children}
+                        <Footer />
+                    </IntroGate>
+                </QueryProvider>
+                <Toaster position="bottom-right" />
             </body>
         </html>
     );
