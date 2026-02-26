@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
         const data = await backendRes.json();
         return NextResponse.json(data, { status: backendRes.status });
-    } catch {
+    } catch (error: any) {
         return NextResponse.json(
             { error: "Failed to fetch plans" },
             { status: 502 }
