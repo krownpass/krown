@@ -16,7 +16,6 @@ export default function GlassNavbar({
         if (onBecomePartner) return onBecomePartner();
         router.push("/partner#partner-learn-more");
     };
-    
     return (
         <div className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
             <nav
