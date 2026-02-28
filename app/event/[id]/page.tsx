@@ -4,7 +4,6 @@
 
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import OpenInAppButton from "@/app/components/openInAppButton";
 
 type KrownEvent = {
     event_id: string;
@@ -31,7 +30,7 @@ type KrownEvent = {
 /* ── Fetch ──────────────────────────────────────────────────────── */
 async function getEvent(id: string): Promise<KrownEvent | null> {
     try {
-        const res = await fetch(`${process.env.API_BASE_URL}/api/events/${id}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/api/events/${id}`, {
             next: { revalidate: 60 },
             headers: { "Content-Type": "application/json" },
         });
@@ -53,12 +52,13 @@ const formatTime = (d: string) =>
     new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
 /* ── OG Metadata ────────────────────────────────────────────────── */
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-    const event = await getEvent(params.id);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+    const { id } = await params;
+    const event = await getEvent(id);
     if (!event) return { title: "Event not found – KrownPass" };
 
     const image = event.cover_image ?? "https://krownpass.com/og-default.png";
-    const url = `https://krownpass.com/event/${params.id}`;
+    const url = `https://krownpass.com/event/${id}`;
 
     return {
         title: `${event.title} – KrownPass`,
@@ -76,8 +76,9 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 /* ── Page ───────────────────────────────────────────────────────── */
-export default async function EventPage({ params }: { params: { id: string } }) {
-    const event = await getEvent(params.id);
+export default async function EventPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const event = await getEvent(id);
     if (!event) notFound();
 
     const isRevealed = event.is_revealed !== false;
@@ -88,7 +89,7 @@ export default async function EventPage({ params }: { params: { id: string } }) 
 
     const APP_STORE = "https://apps.apple.com/app/idYOUR_APP_ID";     // ← replace
     const PLAY_STORE = "https://play.google.com/store/apps/details?id=com.krown.app";
-    const APP_LINK = `krown://event/${params.id}`;
+    const APP_LINK = `krown://event/${id}`;
 
     return (
         <main style={s.page}>
@@ -171,13 +172,8 @@ export default async function EventPage({ params }: { params: { id: string } }) 
 
                 <p style={s.orLabel}>Don't have the app?</p>
                 <div style={s.storeRow}>
-
-// Replace the CTA section with:
-                    <OpenInAppButton
-                        path={`event/${params.id}`}   // or cafe/${params.id}
-                        appStoreUrl="https://apps.apple.com/app/idYOUR_APP_ID"
-                        playStoreUrl="https://play.google.com/store/apps/details?id=com.krown.app"
-                    />
+                    <a href={APP_STORE} style={s.storeBtn}>🍎 App Store</a>
+                    <a href={PLAY_STORE} style={s.storeBtn}>🤖 Play Store</a>
                 </div>
             </div>
         </main>

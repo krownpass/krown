@@ -25,7 +25,7 @@ type Cafe = {
 /* ── Fetch ──────────────────────────────────────────────────────── */
 async function getCafe(id: string): Promise<Cafe | null> {
     try {
-        const res = await fetch(`${process.env.API_BASE_URL}/api/cafes/${id}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/api/cafes/${id}`, {
             next: { revalidate: 60 },
             headers: { "Content-Type": "application/json" },
         });
@@ -40,7 +40,7 @@ async function getCafe(id: string): Promise<Cafe | null> {
 /* ── Fetch cafe images (same endpoint as getCafeImages in cafeService.ts) ── */
 async function getCafeHeroImage(id: string): Promise<string | null> {
     try {
-        const res = await fetch(`${process.env.API_BASE_URL}/api/cafes/${id}/images`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/api/cafes/${id}/images`, {
             next: { revalidate: 60 },
             headers: { "Content-Type": "application/json" },
         });
@@ -55,12 +55,13 @@ async function getCafeHeroImage(id: string): Promise<string | null> {
 }
 
 /* ── OG Metadata ────────────────────────────────────────────────── */
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-    const cafe = await getCafe(params.id);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+    const { id } = await params;
+    const cafe = await getCafe(id);
     if (!cafe) return { title: "Café not found – KrownPass" };
 
     const image = cafe.cover_img ?? "https://krownpass.com/og-default.png";
-    const url = `https://krownpass.com/cafe/${params.id}`;
+    const url = `https://krownpass.com/cafe/${id}`;
     const desc = cafe.description ?? `${cafe.cafe_location ?? "Visit us"} · ⭐ ${cafe.ratings ?? "4.5"}`;
 
     return {
@@ -79,10 +80,11 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 /* ── Page ───────────────────────────────────────────────────────── */
-export default async function CafePage({ params }: { params: { id: string } }) {
+export default async function CafePage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     const [cafe, heroImage] = await Promise.all([
-        getCafe(params.id),
-        getCafeHeroImage(params.id),
+        getCafe(id),
+        getCafeHeroImage(id),
     ]);
 
     if (!cafe) notFound();
@@ -91,7 +93,7 @@ export default async function CafePage({ params }: { params: { id: string } }) {
 
     const APP_STORE = "https://apps.apple.com/app/idYOUR_APP_ID";     // ← replace
     const PLAY_STORE = "https://play.google.com/store/apps/details?id=com.krown.app";
-    const APP_LINK = `krown://cafe/${params.id}`;
+    const APP_LINK = `krown://cafe/${id}`;
 
     // Google Maps directions link (same logic as handleDirections in RedeemScreen)
     const mapsUrl = cafe.latitude && cafe.longitude
