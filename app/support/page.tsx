@@ -1,8 +1,58 @@
 "use client";
 
 import { useState } from "react";
+import type { ChangeEvent } from "react";
+import { AxiosError } from "axios";
+import GlassNavbar from "../components/NavBar";
+import api from "../lib/api";
+import { ContactSchema, SUBJECT_VALUES } from "../schemas/support";
+import type { ContactSubject } from "../schemas/support";
 
-const FAQ_ITEMS = [
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type FormStatus = "idle" | "sending" | "sent" | "error";
+
+interface RawForm {
+    name: string;
+    email: string;
+    phone: string;
+    subject: ContactSubject | "";
+    message: string;
+}
+
+type FieldErrors = Partial<Record<keyof RawForm, string>>;
+
+interface FaqItem {
+    q: string;
+    a: string;
+}
+
+interface FaqCategory {
+    category: string;
+    questions: FaqItem[];
+}
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const EMPTY_FORM: RawForm = {
+    name: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
+};
+
+const SUBJECT_LABELS: Record<ContactSubject, string> = {
+    booking: "Booking Issue",
+    payment: "Payment / Refund",
+    "krown-pass": "Krown Pass",
+    account: "Account Issue",
+    bug: "Bug Report",
+    feedback: "Feedback / Suggestion",
+    other: "Other",
+};
+
+const FAQ_ITEMS: FaqCategory[] = [
     {
         category: "Getting Started",
         questions: [
@@ -73,107 +123,93 @@ const FAQ_ITEMS = [
     },
 ];
 
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function SupportPage() {
     const [openFaq, setOpenFaq] = useState<string | null>(null);
-    const [activeCategory, setActiveCategory] = useState("Getting Started");
-    const [contactForm, setContactForm] = useState({
-        name: "",
-        email: "",
-        phone: "",
-        subject: "",
-        message: "",
-    });
-    const [formStatus, setFormStatus] = useState<
-        "idle" | "sending" | "sent" | "error"
-    >("idle");
+    const [activeCategory, setActiveCategory] = useState<string>("Getting Started");
 
-    const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.krownpass.com";
+    const [form, setForm] = useState<RawForm>(EMPTY_FORM);
+    const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+    const [formStatus, setFormStatus] = useState<FormStatus>("idle");
+    const [serverError, setServerError] = useState<string>("");
 
-    const handleSubmit = async () => {
-        if (
-            !contactForm.name ||
-            !contactForm.email ||
-            !contactForm.subject ||
-            !contactForm.message
-        ) {
+    const setField = <K extends keyof RawForm>(key: K, value: RawForm[K]): void => {
+        setForm((prev) => ({ ...prev, [key]: value }));
+        if (fieldErrors[key]) {
+            setFieldErrors((prev) => ({ ...prev, [key]: undefined }));
+        }
+    };
+
+    const toggleFaq = (id: string): void => {
+        setOpenFaq((prev) => (prev === id ? null : id));
+    };
+
+    const currentQuestions: FaqItem[] =
+        FAQ_ITEMS.find((c) => c.category === activeCategory)?.questions ?? [];
+
+    const handleSubmit = async (): Promise<void> => {
+        setFieldErrors({});
+        setServerError("");
+
+        const parsed = ContactSchema.safeParse(form);
+        if (!parsed.success) {
+            const errs: FieldErrors = {};
+            parsed.error.flatten().fieldErrors &&
+                Object.entries(parsed.error.flatten().fieldErrors).forEach(
+                    ([key, messages]) => {
+                        if (messages?.[0]) {
+                            errs[key as keyof FieldErrors] = messages[0];
+                        }
+                    }
+                );
+            setFieldErrors(errs);
             return;
         }
+
         setFormStatus("sending");
+
         try {
-            const res = await fetch(`${API_BASE}/api/support/contact`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(contactForm),
-            });
-            if (!res.ok) throw new Error("Failed");
+            await api.post<{ success: boolean; message: string }>(
+                "/api/users/support/contact",
+                {
+                    ...parsed.data,
+                    phone: parsed.data.phone || undefined,
+                }
+            );
             setFormStatus("sent");
-            setContactForm({
-                name: "",
-                email: "",
-                phone: "",
-                subject: "",
-                message: "",
-            });
-        } catch {
+            setForm(EMPTY_FORM);
+        } catch (err) {
+            const axiosErr = err as AxiosError<{ message?: string }>;
+            const msg =
+                axiosErr.response?.data?.message ??
+                "Something went wrong. Please try again or email us at support@krownpass.com";
+            setServerError(msg);
             setFormStatus("error");
         }
     };
 
-    const toggleFaq = (id: string) => {
-        setOpenFaq(openFaq === id ? null : id);
-    };
-
-    const currentQuestions =
-        FAQ_ITEMS.find((c) => c.category === activeCategory)?.questions || [];
-
     return (
         <div className="min-h-screen bg-[#0A0A0A] relative overflow-hidden">
-            {/* ─── Ambient Background ─── */}
+            {/* Ambient Background */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute top-[-15%] right-[-5%] w-[700px] h-[700px] rounded-full bg-[#800020]/8 blur-[180px] animate-pulse" />
                 <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#800020]/5 blur-[140px] animate-pulse" />
                 <div className="absolute top-[40%] left-[50%] w-[300px] h-[300px] rounded-full bg-[#1a0a10]/40 blur-[100px]" />
             </div>
 
-            {/* ─── Header ─── */}
-            <header className="relative z-10 border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-                    <a
-                        href="https://krownpass.com"
-                        className="flex items-center gap-3"
-                    >
-                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#800020] to-[#a0002a] flex items-center justify-center shadow-lg shadow-[#800020]/20">
-                            <span className="text-lg">👑</span>
-                        </div>
-                        <span className="text-white text-xl tracking-[0.2em] font-semibold font-serif">
-                            KROWN
-                        </span>
-                    </a>
-                    <a
-                        href="https://krownpass.com"
-                        className="text-white/40 text-sm hover:text-white/70 transition-colors duration-300"
-                    >
-                        ← Back to Krown
-                    </a>
-                </div>
-            </header>
+            <GlassNavbar onJoin={() => window.location.href = "https://krownpass.com"} />
 
-            {/* ─── Hero Section ─── */}
-            <section className="relative z-10 pt-20 pb-16 px-6">
+            {/* Hero */}
+            <section className="relative z-10 pt-20 pb-20 px-6">
                 <div className="max-w-3xl mx-auto text-center">
-                    <div
-                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] mb-8 animate-[fadeIn_0.5s_ease-out]"
-                    >
+                    <div className="inline-flex m-10 items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] mb-8 animate-[fadeIn_0.5s_ease-out]">
                         <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                         <span className="text-white/40 text-xs tracking-wider uppercase">
                             Support available 10 AM – 8 PM IST
                         </span>
                     </div>
-
-                    <h1
-                        className="text-4xl md:text-5xl text-white font-semibold font-serif mb-5 animate-[fadeIn_0.6s_ease-out]"
-                    >
+                    <h1 className="text-4xl md:text-5xl text-white font-semibold font-serif mb-5 animate-[fadeIn_0.6s_ease-out]">
                         How can we help?
                     </h1>
                     <p className="text-white/35 text-base md:text-lg leading-relaxed max-w-lg mx-auto animate-[fadeIn_0.7s_ease-out]">
@@ -183,7 +219,7 @@ export default function SupportPage() {
                 </div>
             </section>
 
-            {/* ─── Quick Links ─── */}
+            {/* Quick Links */}
             <section className="relative z-10 px-6 pb-16">
                 <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
@@ -220,33 +256,28 @@ export default function SupportPage() {
                             action: "Under 24 hours",
                             href: "#contact",
                         },
-                    ].map((item, i) => (
+                    ].map((item, i: number) => (
                         <a
                             key={i}
                             href={item.href}
                             className="group relative rounded-2xl border border-white/[0.06] p-6 transition-all duration-500 hover:border-[#800020]/20 hover:shadow-lg hover:shadow-[#800020]/5 animate-[fadeIn_0.5s_ease-out]"
                             style={{
                                 animationDelay: `${i * 100}ms`,
-                                background:
-                                    "linear-gradient(145deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.005) 100%)",
+                                background: "linear-gradient(145deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.005) 100%)",
                             }}
                         >
                             <div className="w-12 h-12 rounded-xl bg-[#800020]/10 border border-[#800020]/15 flex items-center justify-center mb-4 text-[#cc3355] group-hover:bg-[#800020]/20 transition-colors duration-300">
                                 {item.icon}
                             </div>
-                            <h3 className="text-white text-sm font-medium mb-1">
-                                {item.title}
-                            </h3>
+                            <h3 className="text-white text-sm font-medium mb-1">{item.title}</h3>
                             <p className="text-white/25 text-xs mb-3">{item.desc}</p>
-                            <p className="text-[#cc3355] text-sm font-medium">
-                                {item.action}
-                            </p>
+                            <p className="text-[#cc3355] text-sm font-medium">{item.action}</p>
                         </a>
                     ))}
                 </div>
             </section>
 
-            {/* ─── FAQ Section ─── */}
+            {/* FAQ */}
             <section className="relative z-10 px-6 pb-20">
                 <div className="max-w-4xl mx-auto">
                     <div className="text-center mb-12">
@@ -258,9 +289,8 @@ export default function SupportPage() {
                         </p>
                     </div>
 
-                    {/* Category Tabs */}
                     <div className="flex flex-wrap justify-center gap-2 mb-10">
-                        {FAQ_ITEMS.map((cat) => (
+                        {FAQ_ITEMS.map((cat: FaqCategory) => (
                             <button
                                 key={cat.category}
                                 onClick={() => {
@@ -277,9 +307,8 @@ export default function SupportPage() {
                         ))}
                     </div>
 
-                    {/* FAQ Accordion */}
                     <div className="space-y-3">
-                        {currentQuestions.map((faq, i) => {
+                        {currentQuestions.map((faq: FaqItem, i: number) => {
                             const id = `${activeCategory}-${i}`;
                             const isOpen = openFaq === id;
                             return (
@@ -289,53 +318,28 @@ export default function SupportPage() {
                                         ? "border-[#800020]/20 bg-white/[0.02]"
                                         : "border-white/[0.04] bg-white/[0.01] hover:border-white/[0.08]"
                                         }`}
-                                    style={{
-                                        animationDelay: `${i * 60}ms`,
-                                    }}
+                                    style={{ animationDelay: `${i * 60}ms` }}
                                 >
                                     <button
                                         onClick={() => toggleFaq(id)}
                                         className="w-full text-left px-6 py-5 flex items-center justify-between gap-4"
                                     >
-                                        <span
-                                            className={`text-sm font-medium transition-colors duration-300 ${isOpen ? "text-white" : "text-white/50"
-                                                }`}
-                                        >
+                                        <span className={`text-sm font-medium transition-colors duration-300 ${isOpen ? "text-white" : "text-white/50"}`}>
                                             {faq.q}
                                         </span>
-                                        <div
-                                            className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${isOpen
-                                                ? "bg-[#800020]/20 rotate-45"
-                                                : "bg-white/[0.03]"
-                                                }`}
-                                        >
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${isOpen ? "bg-[#800020]/20 rotate-45" : "bg-white/[0.03]"}`}>
                                             <svg
-                                                className={`w-3.5 h-3.5 transition-colors duration-300 ${isOpen ? "text-[#cc3355]" : "text-white/25"
-                                                    }`}
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                strokeWidth={2}
-                                                stroke="currentColor"
+                                                className={`w-3.5 h-3.5 transition-colors duration-300 ${isOpen ? "text-[#cc3355]" : "text-white/25"}`}
+                                                fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
                                             >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    d="M12 4.5v15m7.5-7.5h-15"
-                                                />
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                                             </svg>
                                         </div>
                                     </button>
-                                    <div
-                                        className={`transition-all duration-500 ease-in-out ${isOpen
-                                            ? "max-h-60 opacity-100"
-                                            : "max-h-0 opacity-0"
-                                            }`}
-                                    >
+                                    <div className={`transition-all duration-500 ease-in-out ${isOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"}`}>
                                         <div className="px-6 pb-5">
                                             <div className="h-[1px] bg-white/[0.04] mb-4" />
-                                            <p className="text-white/35 text-sm leading-relaxed">
-                                                {faq.a}
-                                            </p>
+                                            <p className="text-white/35 text-sm leading-relaxed">{faq.a}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -345,7 +349,7 @@ export default function SupportPage() {
                 </div>
             </section>
 
-            {/* ─── Contact Form Section ─── */}
+            {/* Contact Form */}
             <section className="relative z-10 px-6 pb-20" id="contact">
                 <div className="max-w-2xl mx-auto">
                     <div className="text-center mb-10">
@@ -360,8 +364,7 @@ export default function SupportPage() {
                     <div
                         className="rounded-2xl border border-white/[0.06] p-8 md:p-10"
                         style={{
-                            background:
-                                "linear-gradient(145deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.005) 100%)",
+                            background: "linear-gradient(145deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.005) 100%)",
                             backdropFilter: "blur(40px)",
                         }}
                     >
@@ -370,26 +373,12 @@ export default function SupportPage() {
                         {formStatus === "sent" ? (
                             <div className="text-center py-8 animate-[fadeIn_0.5s_ease-out]">
                                 <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto mb-5">
-                                    <svg
-                                        className="w-8 h-8 text-green-400"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        strokeWidth={2}
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="m4.5 12.75 6 6 9-13.5"
-                                        />
+                                    <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                                     </svg>
                                 </div>
-                                <h3 className="text-white text-lg font-semibold font-serif mb-2">
-                                    Message Sent!
-                                </h3>
-                                <p className="text-white/35 text-sm mb-6">
-                                    We&apos;ll get back to you within 24 hours.
-                                </p>
+                                <h3 className="text-white text-lg font-semibold font-serif mb-2">Message Sent!</h3>
+                                <p className="text-white/35 text-sm mb-6">We&apos;ll get back to you within 24 hours.</p>
                                 <button
                                     onClick={() => setFormStatus("idle")}
                                     className="text-[#cc3355] text-sm hover:text-[#e04070] transition-colors"
@@ -399,6 +388,7 @@ export default function SupportPage() {
                             </div>
                         ) : (
                             <div className="space-y-5">
+
                                 {/* Name & Email */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
@@ -407,13 +397,13 @@ export default function SupportPage() {
                                         </label>
                                         <input
                                             type="text"
-                                            value={contactForm.name}
-                                            onChange={(e) =>
-                                                setContactForm({ ...contactForm, name: e.target.value })
-                                            }
+                                            value={form.name}
+                                            onChange={(e: ChangeEvent<HTMLInputElement>) => setField("name", e.target.value)}
                                             placeholder="Your name"
-                                            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3.5 text-white text-sm placeholder:text-white/15 outline-none focus:border-[#800020]/40 transition-colors duration-300"
+                                            className={`w-full bg-white/[0.03] border rounded-xl px-4 py-3.5 text-white text-sm placeholder:text-white/15 outline-none transition-colors duration-300 ${fieldErrors.name ? "border-red-500/50 focus:border-red-500/70" : "border-white/[0.06] focus:border-[#800020]/40"
+                                                }`}
                                         />
+                                        {fieldErrors.name && <p className="text-red-400 text-xs mt-1.5">{fieldErrors.name}</p>}
                                     </div>
                                     <div>
                                         <label className="text-white/40 text-xs font-medium tracking-wider uppercase block mb-2">
@@ -421,16 +411,13 @@ export default function SupportPage() {
                                         </label>
                                         <input
                                             type="email"
-                                            value={contactForm.email}
-                                            onChange={(e) =>
-                                                setContactForm({
-                                                    ...contactForm,
-                                                    email: e.target.value,
-                                                })
-                                            }
+                                            value={form.email}
+                                            onChange={(e: ChangeEvent<HTMLInputElement>) => setField("email", e.target.value)}
                                             placeholder="your@email.com"
-                                            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3.5 text-white text-sm placeholder:text-white/15 outline-none focus:border-[#800020]/40 transition-colors duration-300"
+                                            className={`w-full bg-white/[0.03] border rounded-xl px-4 py-3.5 text-white text-sm placeholder:text-white/15 outline-none transition-colors duration-300 ${fieldErrors.email ? "border-red-500/50 focus:border-red-500/70" : "border-white/[0.06] focus:border-[#800020]/40"
+                                                }`}
                                         />
+                                        {fieldErrors.email && <p className="text-red-400 text-xs mt-1.5">{fieldErrors.email}</p>}
                                     </div>
                                 </div>
 
@@ -440,23 +427,22 @@ export default function SupportPage() {
                                         Phone (optional)
                                     </label>
                                     <div className="flex gap-3">
-                                        <div className="flex items-center px-4 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white/30 text-sm">
+                                        <div className="flex items-center px-4 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white/30 text-sm whitespace-nowrap">
                                             +91
                                         </div>
                                         <input
                                             type="tel"
-                                            value={contactForm.phone}
-                                            onChange={(e) =>
-                                                setContactForm({
-                                                    ...contactForm,
-                                                    phone: e.target.value.replace(/\D/g, "").slice(0, 10),
-                                                })
+                                            value={form.phone}
+                                            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                                                setField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))
                                             }
-                                            placeholder="Your phone number"
+                                            placeholder="10-digit number"
                                             maxLength={10}
-                                            className="flex-1 bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3.5 text-white text-sm placeholder:text-white/15 outline-none focus:border-[#800020]/40 transition-colors duration-300"
+                                            className={`flex-1 bg-white/[0.03] border rounded-xl px-4 py-3.5 text-white text-sm placeholder:text-white/15 outline-none transition-colors duration-300 ${fieldErrors.phone ? "border-red-500/50 focus:border-red-500/70" : "border-white/[0.06] focus:border-[#800020]/40"
+                                                }`}
                                         />
                                     </div>
+                                    {fieldErrors.phone && <p className="text-red-400 text-xs mt-1.5">{fieldErrors.phone}</p>}
                                 </div>
 
                                 {/* Subject */}
@@ -465,41 +451,23 @@ export default function SupportPage() {
                                         Subject <span className="text-red-400">*</span>
                                     </label>
                                     <select
-                                        value={contactForm.subject}
-                                        onChange={(e) =>
-                                            setContactForm({
-                                                ...contactForm,
-                                                subject: e.target.value,
-                                            })
+                                        value={form.subject}
+                                        onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+                                            setField("subject", e.target.value as ContactSubject | "")
                                         }
-                                        className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3.5 text-white text-sm outline-none focus:border-[#800020]/40 transition-colors duration-300 appearance-none"
+                                        className={`w-full bg-white/[0.03] border rounded-xl px-4 py-3.5 text-sm outline-none transition-colors duration-300 appearance-none ${form.subject ? "text-white" : "text-white/25"
+                                            } ${fieldErrors.subject ? "border-red-500/50 focus:border-red-500/70" : "border-white/[0.06] focus:border-[#800020]/40"
+                                            }`}
                                         style={{ colorScheme: "dark" }}
                                     >
-                                        <option value="" className="bg-[#1a1a1a]">
-                                            Select a topic
-                                        </option>
-                                        <option value="booking" className="bg-[#1a1a1a]">
-                                            Booking Issue
-                                        </option>
-                                        <option value="payment" className="bg-[#1a1a1a]">
-                                            Payment / Refund
-                                        </option>
-                                        <option value="krown-pass" className="bg-[#1a1a1a]">
-                                            Krown Pass
-                                        </option>
-                                        <option value="account" className="bg-[#1a1a1a]">
-                                            Account Issue
-                                        </option>
-                                        <option value="bug" className="bg-[#1a1a1a]">
-                                            Bug Report
-                                        </option>
-                                        <option value="feedback" className="bg-[#1a1a1a]">
-                                            Feedback / Suggestion
-                                        </option>
-                                        <option value="other" className="bg-[#1a1a1a]">
-                                            Other
-                                        </option>
+                                        <option value="" className="bg-[#1a1a1a] text-white/40">Select a topic</option>
+                                        {SUBJECT_VALUES.map((val: ContactSubject) => (
+                                            <option key={val} value={val} className="bg-[#1a1a1a] text-white">
+                                                {SUBJECT_LABELS[val]}
+                                            </option>
+                                        ))}
                                     </select>
+                                    {fieldErrors.subject && <p className="text-red-400 text-xs mt-1.5">{fieldErrors.subject}</p>}
                                 </div>
 
                                 {/* Message */}
@@ -508,59 +476,42 @@ export default function SupportPage() {
                                         Message <span className="text-red-400">*</span>
                                     </label>
                                     <textarea
-                                        value={contactForm.message}
-                                        onChange={(e) =>
-                                            setContactForm({
-                                                ...contactForm,
-                                                message: e.target.value,
-                                            })
-                                        }
+                                        value={form.message}
+                                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setField("message", e.target.value)}
                                         placeholder="Describe your issue or question in detail..."
                                         rows={5}
-                                        className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3.5 text-white text-sm placeholder:text-white/15 outline-none focus:border-[#800020]/40 transition-colors duration-300 resize-none"
+                                        className={`w-full bg-white/[0.03] border rounded-xl px-4 py-3.5 text-white text-sm placeholder:text-white/15 outline-none transition-colors duration-300 resize-none ${fieldErrors.message ? "border-red-500/50 focus:border-red-500/70" : "border-white/[0.06] focus:border-[#800020]/40"
+                                            }`}
                                     />
+                                    <div className="flex justify-between items-center mt-1.5">
+                                        {fieldErrors.message
+                                            ? <p className="text-red-400 text-xs">{fieldErrors.message}</p>
+                                            : <span />
+                                        }
+                                        <p className={`text-xs ml-auto ${form.message.length > 4800 ? "text-red-400" : "text-white/20"}`}>
+                                            {form.message.length}/5000
+                                        </p>
+                                    </div>
                                 </div>
 
-                                {formStatus === "error" && (
+                                {/* Server error */}
+                                {formStatus === "error" && serverError && (
                                     <div className="bg-red-500/5 border border-red-500/10 rounded-xl px-4 py-3">
-                                        <p className="text-red-400 text-sm">
-                                            Something went wrong. Please try again or email us directly
-                                            at support@krownpass.com
-                                        </p>
+                                        <p className="text-red-400 text-sm">{serverError}</p>
                                     </div>
                                 )}
 
+                                {/* Submit */}
                                 <button
                                     onClick={handleSubmit}
-                                    disabled={
-                                        formStatus === "sending" ||
-                                        !contactForm.name ||
-                                        !contactForm.email ||
-                                        !contactForm.subject ||
-                                        !contactForm.message
-                                    }
+                                    disabled={formStatus === "sending"}
                                     className="w-full py-3.5 rounded-xl bg-[#800020] text-white text-sm font-medium hover:bg-[#9a0028] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-lg hover:shadow-[#800020]/20"
                                 >
                                     {formStatus === "sending" ? (
                                         <span className="flex items-center justify-center gap-2">
-                                            <svg
-                                                className="animate-spin w-4 h-4"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <circle
-                                                    className="opacity-25"
-                                                    cx="12"
-                                                    cy="12"
-                                                    r="10"
-                                                    stroke="currentColor"
-                                                    strokeWidth="4"
-                                                    fill="none"
-                                                />
-                                                <path
-                                                    className="opacity-75"
-                                                    fill="currentColor"
-                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                                                />
+                                            <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                             </svg>
                                             Sending...
                                         </span>
@@ -573,35 +524,6 @@ export default function SupportPage() {
                     </div>
                 </div>
             </section>
-
-            {/* ─── Footer ─── */}
-            <footer className="relative z-10 border-t border-white/[0.03] py-10 px-6">
-                <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                    <p className="text-white/15 text-xs">
-                        © 2026 Krown Private Limited. All rights reserved.
-                    </p>
-                    <div className="flex items-center gap-6">
-                        <a
-                            href="https://krownpass.com/privacy"
-                            className="text-white/20 text-xs hover:text-white/40 transition-colors"
-                        >
-                            Privacy Policy
-                        </a>
-                        <a
-                            href="https://krownpass.com/terms"
-                            className="text-white/20 text-xs hover:text-white/40 transition-colors"
-                        >
-                            Terms of Service
-                        </a>
-                        <a
-                            href="https://krownpass.com/delete-account"
-                            className="text-white/20 text-xs hover:text-white/40 transition-colors"
-                        >
-                            Delete Account
-                        </a>
-                    </div>
-                </div>
-            </footer>
         </div>
     );
 }
