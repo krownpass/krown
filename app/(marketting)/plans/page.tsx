@@ -59,6 +59,25 @@ const sanitizeParam = (value: string, maxLen = 200): string => {
 
 /** Build a deep link and redirect back to the Krown app */
 const forceRedirectToApp = (deepLink: string) => {
+    try {
+        const searchParams = new URL(window.location.href).searchParams;
+        const source = searchParams.get('source');
+        const redirectUrl = searchParams.get('redirect_url');
+
+        if (source === 'web' && redirectUrl) {
+            const externalUrl = new URL(redirectUrl);
+            const parsedDeepLink = new URL(deepLink.replace("krown://", "http://dummy/"));
+            
+            parsedDeepLink.searchParams.forEach((value, key) => {
+                externalUrl.searchParams.set(key, value);
+            });
+            window.location.replace(externalUrl.toString());
+            return;
+        }
+    } catch {
+        // Safe fallback backwards to standard native app handling
+    }
+
     const userAgent = navigator.userAgent || "";
     const isAndroid = /android/i.test(userAgent);
 
