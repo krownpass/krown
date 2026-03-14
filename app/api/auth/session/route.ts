@@ -18,12 +18,12 @@ export async function GET(req: NextRequest) {
     const host = req.headers.get("host") || req.nextUrl.host;
     const origin = `${proto}://${host}`;
 
-    const parsedPlansUrl = new URL("/plans", origin);
-    if (source) parsedPlansUrl.searchParams.set("source", source);
-    if (redirectUrl) parsedPlansUrl.searchParams.set("redirect_url", redirectUrl);
+    const targetPath = redirectUrl || "/plans";
+    const targetUrl = new URL(targetPath, origin);
+    if (source) targetUrl.searchParams.set("source", source);
 
     if (!token) {
-        return NextResponse.redirect(parsedPlansUrl);
+        return NextResponse.redirect(targetUrl);
     }
 
     // Decode JWT payload to get expiry (for cookie maxAge)
@@ -41,8 +41,8 @@ export async function GET(req: NextRequest) {
         if (payload.exp) {
             const remaining = payload.exp - Math.floor(Date.now() / 1000);
             if (remaining <= 0) {
-                // Token expired — redirect to plans (will show Access Denied)
-                return NextResponse.redirect(parsedPlansUrl);
+                // Token expired — redirect (will likely show Access Denied if protected)
+                return NextResponse.redirect(targetUrl);
             }
             maxAge = remaining;
         }
@@ -50,8 +50,8 @@ export async function GET(req: NextRequest) {
         // If we can't decode, use default maxAge — server will verify on use
     }
 
-    // Redirect to /plans and set the httpOnly cookie
-    const response = NextResponse.redirect(parsedPlansUrl);
+    // Redirect to target path and set the httpOnly cookie
+    const response = NextResponse.redirect(targetUrl);
 
     response.cookies.set("krown_session", token, {
         httpOnly: true,
