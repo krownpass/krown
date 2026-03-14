@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import GlassNavbar from "../../components/NavBar";
 import { Loader2, AlertTriangle, ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function DeleteAccountPage() {
+function DeleteAccountContent() {
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
@@ -13,6 +14,8 @@ export default function DeleteAccountPage() {
     const [confirmationText, setConfirmationText] = useState("");
     const [success, setSuccess] = useState(false);
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const appRedirect = searchParams?.get("app_redirect") || "krown://";
 
     useEffect(() => {
         fetch("/api/user/me")
@@ -52,7 +55,8 @@ export default function DeleteAccountPage() {
 
             setSuccess(true);
             setTimeout(() => {
-                window.location.href = "krown://";
+                const separator = appRedirect.includes('?') ? '&' : '?';
+                window.location.href = `${appRedirect}${separator}status=success`;
             }, 3000);
         } catch (err: any) {
             setError(err.message);
@@ -147,7 +151,10 @@ export default function DeleteAccountPage() {
 
                             <div className="flex gap-4 pt-4">
                                 <button
-                                    onClick={() => window.location.href = "krown://"}
+                                    onClick={() => {
+                                        const separator = appRedirect.includes('?') ? '&' : '?';
+                                        window.location.href = `${appRedirect}${separator}status=canceled`;
+                                    }}
                                     disabled={deleting}
                                     className="flex-1 py-4 flex items-center justify-center gap-2 rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-all font-medium"
                                 >
@@ -168,5 +175,13 @@ export default function DeleteAccountPage() {
                 </div>
             </main>
         </div>
+    );
+}
+
+export default function DeleteAccountPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#800020]" /></div>}>
+            <DeleteAccountContent />
+        </Suspense>
     );
 }
