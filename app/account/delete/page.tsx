@@ -15,7 +15,7 @@ export default function DeleteAccountPage() {
     const router = useRouter();
 
     useEffect(() => {
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/users/me`, { credentials: "include" })
+        fetch("/api/user/me")
             .then((res) => {
                 if (!res.ok) throw new Error("Could not fetch profile. Are you logged in?");
                 return res.json();
@@ -39,10 +39,9 @@ export default function DeleteAccountPage() {
         setError("");
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/users/me`, {
+            const res = await fetch("/api/user/me", {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
-                credentials: "include",
             });
             const data = await res.json();
 
